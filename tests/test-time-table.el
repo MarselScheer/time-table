@@ -14,6 +14,16 @@
 (defun ms/fixture-time-table-entry()
   (time-table--build-entry "proj" "task"))
 
+(defun ms/fixture-time-table-empty-buffer ()
+  (let (
+	(buf-name "unit-test-time-table"))
+    (when (get-buffer buf-name)
+      (kill-buffer buf-name))
+    (let (
+	  (rtn (generate-new-buffer buf-name)))
+      (set-buffer rtn)
+      rtn)))
+
 (ert-deftest time-table--build-entry ()
   "Check that all entries build are correct"
   (let (
@@ -34,8 +44,22 @@
 (ert-deftest time-table--build-entry-with-user-work-hours ()
   "Check that all entries build are correct"
   (let* (
-	(time-table-work-hours 4)
-	(out (ms/fixture-time-table-entry)))
+	 (time-table-work-hours 4)
+	 (out (ms/fixture-time-table-entry)))
     (should (string=
 	     "4"
 	     (nth 1 (string-split out ","))))))
+
+
+(ert-deftest time-table--prepend-to-buffer ()
+  "Check that time-table entries are prepended to buffer"
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer)))
+    (time-table--prepend-to-buffer "prj" "tsk" "fake-time" buf)
+    (sleep-for 1)
+    (setq time-table-work-hours 4)
+    (time-table--prepend-to-buffer "prj2" "tsk2" "fake-time2" buf)
+    (set-buffer buf)
+    (should (string=
+	     (buffer-string)
+	     "fake-time2,4,prj2,tsk2\nfake-time,8,prj,tsk\n"))))
