@@ -7,9 +7,9 @@
 	(b (ms/time-stamp-to-sec ts2)))
     (< (abs (- a b)) 2)))
 
-(defun ms/now ()
+(cl-defun ms/now (&optional (substract 0))
   (format-time-string
-   "%Y-%m-%d %H:%M:%S" (current-time)))
+   "%Y-%m-%d %H:%M:%S" (- (time-convert (current-time) 'integer) substract)))
 
 (defun ms/fixture-time-table-entry()
   (time-table--build-entry "proj" "task"))
@@ -81,3 +81,13 @@ and later assertions are made on the buffer content"
     (should (string=
 	   (format "%s" (time-table--summarize-project-times buf))
 	   (format "%s" (list (list "p1" 2.0) (list "p2" 0.5)))))))
+
+(ert-deftest time-table--summarize-project-time-uses-implicit-end-task ()
+  "Check that time-table entries are prepended to buffer"
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer)))
+    (time-table--prepend-to-buffer "prj" "tsk" (ms/now 3600) buf)
+    (set-buffer "*scratch*")
+    (should (string=
+	   (format "%s" (time-table--summarize-project-times buf))
+	   (format "%s" (list (list "prj" 1.0)))))))

@@ -118,6 +118,9 @@ Note the number of seconds we must work on a particular is only once per set
 and 0 for the other day. This allows then to calculate easily for each day how
 much time is left or we are already over time by simply summing up the 0-th
 and 1-th column and substract them.
+
+Also implicitly adds an end task as latest entry in order to also calculate
+the time worked for the latest task.
 "
   (with-current-buffer _buffer
     (let (
@@ -125,24 +128,25 @@ and 1-th column and substract them.
 	  (next-line-data nil)
 	  (curr-line-data nil)
 	  (last-line-data nil)
-	  (current-line 1)
+	  (current-line 0)
 	  (elements nil)
 	  (last-line (line-number-at-pos (point-max))))
       (while (< current-line last-line)
-	(goto-line current-line)
-	(setq curr-line-data (split-string (thing-at-point 'line) ","))
-	(time-table--debug-message "cld: " curr-line-data)
+	(time-table--debug-message "ts:" (time-table--now-time-stamp))
+	(if (= current-line 0)
+
+	    (setq curr-line-data (split-string (time-table--build-entry "end" "end" (time-table--now-time-stamp)) ","))
+	  (progn
+	    (goto-line current-line)
+	    (setq curr-line-data (split-string (thing-at-point 'line) ","))))
 	(goto-line (+ current-line 1))
 	(setq next-line-data (split-string (thing-at-point 'line) ","))
-	(time-table--debug-message "nld: " next-line-data)
 	(setq elements (split-string (thing-at-point 'line) ","))
 	(setq elements (mapcar 'string-trim elements))
 	(push (time-table--time-stamp-diff curr-line-data next-line-data) elements)
-	(time-table--debug-message "hours to work: " (time-table--hours-to-work curr-line-data next-line-data current-line last-line))
 	(push (time-table--hours-to-work curr-line-data next-line-data current-line last-line) elements)
 	(push elements rtn)
 	(setq current-line (+ 1 current-line)))
-      (time-table--debug-message "--to-list:" rtn)
       rtn)))
 
 (setq DEBUG t)
