@@ -83,7 +83,7 @@ and later assertions are made on the buffer content"
 	   (format "%s" (list (list "p1" 2.0) (list "p2" 0.5)))))))
 
 (ert-deftest time-table--summarize-project-time-uses-implicit-end-task ()
-  "Check that time-table entries are prepended to buffer"
+  "Sum project time using implicit end task"
   (let* (
 	 (buf (ms/fixture-time-table-empty-buffer)))
     (time-table--prepend-to-buffer "prj" "tsk" (ms/now 3600) buf)
@@ -91,3 +91,13 @@ and later assertions are made on the buffer content"
     (should (string=
 	   (format "%s" (time-table--summarize-project-times buf))
 	   (format "%s" (list (list "prj" 1.0)))))))
+
+(ert-deftest time-table--calcs-over-hours-with-implicit-end-task ()
+  "Calculates over hours using implicit end task"
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer)))
+    (time-table--prepend-to-buffer "prj" "tsk" (ms/now 3600) buf)
+    (set-buffer "*scratch*")
+    (should (=
+	     (time-table--over-hours buf)
+	     -7.0))))

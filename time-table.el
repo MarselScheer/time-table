@@ -8,6 +8,9 @@
   "The number of hours for a work day. Will be added to each entry for the time table"
   :type 'integer)
 
+(defvar time-table-expected-work-time-col 0
+  "Column number for the time expected worked in the time-table-structure")
+
 (defvar time-table-actual-work-time-col 1
   "Column number for the time acutally worked in the time-table-structure")
 
@@ -132,7 +135,6 @@ the time worked for the latest task.
 	  (elements nil)
 	  (last-line (line-number-at-pos (point-max))))
       (while (< current-line last-line)
-	(time-table--debug-message "ts:" (time-table--now-time-stamp))
 	(if (= current-line 0)
 
 	    (setq curr-line-data (split-string (time-table--build-entry "end" "end" (time-table--now-time-stamp)) ","))
@@ -192,6 +194,9 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
 (defun time-table--sum-actual-work-time (a b)
   (+ a (nth time-table-actual-work-time-col b)))
 
+(defun time-table--sum-expected-work-time (a b)
+  (+ a (nth time-table-expected-work-time-col b)))
+
 (defun time-table--2-digit-hour (x)
   "Converts seconds to hours with the precision of 2 digits"
   (/ (round (/ x 36.0)) 100.0))
@@ -222,3 +227,12 @@ It returns a list of lists, like (('project-name1' 2.3) ('project-name2' 0.2))"
 	(push (time-table--sum-times-for-project tt-list e) rtn))
       ;; (time-table--debug-message "summary:" rtn)
       rtn)))
+
+(cl-defun time-table--over-hours (_buffer)
+  (let* (
+	 (tt-list (time-table--to-list _buffer))
+	 (actual-hours 0)
+	 (expected-hours 0))
+    (setq actual-hours (seq-reduce 'time-table--sum-actual-work-time tt-list 0))
+    (setq expected-hours (seq-reduce 'time-table--sum-expected-work-time tt-list 0))
+    (time-table--2-digit-hour (- actual-hours expected-hours))))
