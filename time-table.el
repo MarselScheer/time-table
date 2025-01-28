@@ -14,6 +14,9 @@
 (defvar time-table-actual-work-time-col 1
   "Column number for the time acutally worked in the time-table-structure")
 
+(defvar time-table-time-stamp-col 2
+  "Column number for the time stamp in the time-table-structure")
+
 (defvar time-table-project-col 4
   "Column number for the project-name in the time-table-structure")
 
@@ -250,3 +253,27 @@ It returns a list of lists, like (('project-name1' 2.3) ('project-name2' 0.2))"
     (setq actual-hours (seq-reduce 'time-table--sum-actual-work-time tt-list 0))
     (setq expected-hours (seq-reduce 'time-table--sum-expected-work-time tt-list 0))
     (time-table--2-digit-hour (- actual-hours expected-hours))))
+
+(cl-defun time-table--keep-last-7-days
+    (time-table-list
+     &optional
+     (time-stamp (time-table--now-time-stamp)))
+  (time-table--debug-message "tt-stamp" time-stamp)
+  (time-table--debug-message "filter-in: " time-table-list)
+  (time-table--debug-message "last:" (* 3600 24 7))
+  (let (
+	(last-day-to-keep
+	 (-
+	  (time-convert (date-to-time (time-table--keep-yyyymmdd time-stamp)) 'integer)
+	  (* 3600 24 6))))
+  (time-table--debug-message "last:" (time-convert (date-to-time (time-table--keep-yyyymmdd time-stamp)) 'integer))
+  (time-table--debug-message "last:" last-day-to-keep)
+  (time-table--debug-message "last:" (format-time-string "%Y-%m-%d %H:%M:%S" (time-convert (date-to-time (time-table--keep-yyyymmdd time-stamp)) 'integer)))
+  (time-table--debug-message "last:" (format-time-string "%Y-%m-%d %H:%M:%S" last-day-to-keep))
+    (seq-keep
+     (lambda(x)
+       (if
+	   (< last-day-to-keep (time-convert (date-to-time (nth time-table-time-stamp-col x)) 'integer))
+	   x
+	 nil))
+     time-table-list)))
