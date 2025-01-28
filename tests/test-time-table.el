@@ -101,3 +101,22 @@ and later assertions are made on the buffer content"
     (should (=
 	     (time-table--over-hours buf)
 	     -7.0))))
+
+(ert-deftest time-table--calcs-over-hours-if-expected-hours-change ()
+  "Sum project time by project"
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer)))
+    (with-current-buffer buf
+      (insert "2015-01-13 14:50:00,1,end,t1\n")
+      (insert "2015-01-13 14:30:00,1,end,t1\n")
+      (insert "2015-01-13 14:00:00,1,p2,t1\n")
+      (insert "2015-01-13 13:00:00,1,p1,t1\n")
+      (insert "2015-01-12 14:30:00,4,end,t1\n")
+      (insert "2015-01-12 14:00:00,4,p2,t1\n")
+      (insert "2015-01-12 13:00:00,4,p1,t1\n")
+      (insert "2015-01-12 12:00:00,4,p1,t1")
+      )
+    (set-buffer "*scratch*")
+    (should (=
+	     (time-table--over-hours buf)
+	     (+ (- 2.5 4) (- 1.5 1))))))

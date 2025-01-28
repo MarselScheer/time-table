@@ -92,6 +92,15 @@ to _BUFFER"
 	  0)
       expected-hours-to-work)))
 
+(defun time-table--hours-to-work2 (curr-line-data next-line-data)
+  (let (
+	(curr-day (time-table--keep-yyyymmdd (nth 0 curr-line-data)))
+	(next-day (time-table--keep-yyyymmdd (nth 0 next-line-data)))
+	(expected-hours-to-work (* 3600 (string-to-number (nth 1 next-line-data)))))
+    (if (string= curr-day next-day)
+	0
+      expected-hours-to-work)))
+
 (defun time-table--raw-data-from-line (line)
   (goto-line line)
   (split-string (thing-at-point 'line) ","))
@@ -128,6 +137,7 @@ the time worked for the latest task.
   (with-current-buffer _buffer
     (let (
 	  (rtn (list))
+	  (first-line-data nil)
 	  (next-line-data nil)
 	  (curr-line-data nil)
 	  (last-line-data nil)
@@ -136,7 +146,6 @@ the time worked for the latest task.
 	  (last-line (line-number-at-pos (point-max))))
       (while (< current-line last-line)
 	(if (= current-line 0)
-
 	    (setq curr-line-data (split-string (time-table--build-entry "end" "end" (time-table--now-time-stamp)) ","))
 	  (progn
 	    (goto-line current-line)
@@ -146,7 +155,11 @@ the time worked for the latest task.
 	(setq elements (split-string (thing-at-point 'line) ","))
 	(setq elements (mapcar 'string-trim elements))
 	(push (time-table--time-stamp-diff curr-line-data next-line-data) elements)
-	(push (time-table--hours-to-work curr-line-data next-line-data current-line last-line) elements)
+	;; (push (time-table--hours-to-work curr-line-data next-line-data current-line last-line) elements)
+
+	(if (= current-line 0)
+	    (push (* 3600 (string-to-number (nth 1 next-line-data))) elements)
+	  (push (time-table--hours-to-work2 curr-line-data next-line-data) elements))
 	(push elements rtn)
 	(setq current-line (+ 1 current-line)))
       rtn)))
@@ -233,6 +246,7 @@ It returns a list of lists, like (('project-name1' 2.3) ('project-name2' 0.2))"
 	 (tt-list (time-table--to-list _buffer))
 	 (actual-hours 0)
 	 (expected-hours 0))
+
     (setq actual-hours (seq-reduce 'time-table--sum-actual-work-time tt-list 0))
     (setq expected-hours (seq-reduce 'time-table--sum-expected-work-time tt-list 0))
     (time-table--2-digit-hour (- actual-hours expected-hours))))
