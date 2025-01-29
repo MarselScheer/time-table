@@ -126,7 +126,6 @@ and later assertions are made on the buffer content"
 	     (+ (- 2.5 4) (- 1.5 1))))))
 
 (ert-deftest time-table--filter-time-table-list-by-timestamp ()
-  "Sum project time by project"
   (let* (
 	 (buf (ms/fixture-time-table-empty-buffer))
 	 (tt)
@@ -151,3 +150,16 @@ and later assertions are made on the buffer content"
     (should (string=
 	     (nth time-table-time-stamp-col (nth 0 filtered-tt))
 	     "2015-01-13 13:00:00"))))
+
+(ert-deftest time-table--status-returns-latest-entry ()
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer)))
+    (with-current-buffer buf
+      (insert "2015-01-15 14:50:00,1,end,t1\n")
+      (insert "2015-01-13 14:50:00,1,whatever,t1\n")
+      (insert "2015-01-12 12:00:00,4,p1,t1")
+      )
+    (set-buffer "*scratch*")
+    (should (string=
+	     (time-table--status buf)
+	     "2015-01-15 14:50:00,1,end,t1"))))

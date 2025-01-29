@@ -316,6 +316,15 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
 	 (summary (time-table--summarize-project-times time-table-list)))
     (message (format "%s" summary))))
     
+(defun time-table--status (buffer)
+  "Returns the first row of a BUFFER."
+  (with-current-buffer buffer
+    (save-excursion
+      (goto-line 1)
+      (string-trim (thing-at-point 'line)))))
 
 
-
+(defun time-table-status ()
+  (interactive)
+  (let ((track-buffer (time-table--load-track-file)))
+    (message (format "Over hours: %s\n%s"  (time-table--over-hours track-buffer) (time-table--status track-buffer)))))
