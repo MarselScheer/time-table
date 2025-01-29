@@ -303,6 +303,8 @@ It returns a list of lists, like (('project-name1' 2.3) ('project-name2' 0.2))"
 	(track-buffer (time-table--load-track-file))
 	(over-hours (time-table--over-hours track-buffer)))
     (time-table--prepend-to-buffer project-name task-name track-buffer)
+    (with-current-buffer track-buffer
+      (save-buffer))
     (message (format "Tracking %s/%s. Over hours: %s" project-name task-name over-hours))))
 
 
