@@ -291,13 +291,19 @@ It returns a list of lists, like (('project-name1' 2.3) ('project-name2' 0.2))"
         buffer
       (find-file-noselect time-table-file))))
 
+(defun time-table-overhours ()
+  (interactive)
+  (let ((track-buffer (time-table--load-track-file)))
+    (message (format "Over hours: %s" (time-table--over-hours track-buffer)))))
+
 (defun time-table-track ()
   (interactive)
-  (let ((project-name (completing-read "Select a project: " time-table-project-names))
+  (let* ((project-name (completing-read "Select a project: " time-table-project-names))
         (task-name (completing-read "Select a task: " time-table-task-names))
-	(track-buffer (time-table--load-track-file)))
+	(track-buffer (time-table--load-track-file))
+	(over-hours (time-table--over-hours track-buffer)))
     (time-table--prepend-to-buffer project-name task-name track-buffer)
-    (message (format "Tracking %s/%s" project-name task-name))))
+    (message (format "Tracking %s/%s. Over hours: %s" project-name task-name over-hours))))
 
 
 
