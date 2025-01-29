@@ -258,18 +258,11 @@ It returns a list of lists, like (('project-name1' 2.3) ('project-name2' 0.2))"
     (time-table-list
      &optional
      (time-stamp (time-table--now-time-stamp)))
-  (time-table--debug-message "tt-stamp" time-stamp)
-  (time-table--debug-message "filter-in: " time-table-list)
-  (time-table--debug-message "last:" (* 3600 24 7))
   (let (
 	(last-day-to-keep
 	 (-
 	  (time-convert (date-to-time (time-table--keep-yyyymmdd time-stamp)) 'integer)
 	  (* 3600 24 6))))
-  (time-table--debug-message "last:" (time-convert (date-to-time (time-table--keep-yyyymmdd time-stamp)) 'integer))
-  (time-table--debug-message "last:" last-day-to-keep)
-  (time-table--debug-message "last:" (format-time-string "%Y-%m-%d %H:%M:%S" (time-convert (date-to-time (time-table--keep-yyyymmdd time-stamp)) 'integer)))
-  (time-table--debug-message "last:" (format-time-string "%Y-%m-%d %H:%M:%S" last-day-to-keep))
     (seq-keep
      (lambda(x)
        (if
