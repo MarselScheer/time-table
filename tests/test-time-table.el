@@ -58,9 +58,9 @@ and later assertions are made on the buffer content"
   "Check that time-table entries are prepended to buffer"
   (let* (
 	 (buf (ms/fixture-time-table-empty-buffer)))
-    (time-table--prepend-to-buffer "prj" "tsk" "fake-time" buf)
+    (time-table--prepend-to-buffer "prj" "tsk" buf "fake-time")
     (setq time-table-work-hours 4)
-    (time-table--prepend-to-buffer "prj2" "tsk2" "fake-time2" buf)
+    (time-table--prepend-to-buffer "prj2" "tsk2" buf "fake-time2")
     (set-buffer buf)
     (should (string=
 	     (buffer-string)
@@ -86,7 +86,7 @@ and later assertions are made on the buffer content"
   "Sum project time using implicit end task"
   (let* (
 	 (buf (ms/fixture-time-table-empty-buffer)))
-    (time-table--prepend-to-buffer "prj" "tsk" (ms/now 3600) buf)
+    (time-table--prepend-to-buffer "prj" "tsk" buf (ms/now 3600))
     (set-buffer "*scratch*")
     (should (string=
 	   (format "%s" (time-table--summarize-project-times buf))
@@ -96,7 +96,7 @@ and later assertions are made on the buffer content"
   "Calculates over hours using implicit end task"
   (let* (
 	 (buf (ms/fixture-time-table-empty-buffer)))
-    (time-table--prepend-to-buffer "prj" "tsk" (ms/now 3600) buf)
+    (time-table--prepend-to-buffer "prj" "tsk" buf (ms/now 3600))
     (set-buffer "*scratch*")
     (should (=
 	     (time-table--over-hours buf)

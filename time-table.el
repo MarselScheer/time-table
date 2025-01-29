@@ -4,9 +4,21 @@
   :init-value nil
   :lighter " tt")
 
+(defcustom time-table-project-names '("Project 1" "Project 2" "Project 3", "end")
+  "List of available project names"
+  :type 'list)
+
+(defcustom time-table-task-names '("Task 1" "Task 2" "Task 3", "end")
+  "List of available task names"
+  :type 'list)
+
 (defcustom time-table-work-hours 8
   "The number of hours for a work day. Will be added to each entry for the time table"
   :type 'integer)
+
+(defcustom time-table-file (format "%s/Documents/time-table/tracked-times" (getenv "HOME"))
+  "File used to persist tracked times"
+  :type 'string)
 
 (defvar time-table-expected-work-time-col 0
   "Column number for the time expected worked in the time-table-structure")
@@ -49,8 +61,8 @@
     (project-name
      task-name
      &optional
-     (time-stamp (time-table--now-time-stamp))
-     _buffer)
+     _buffer
+     (_time-stamp (time-table--now-time-stamp)))
   "Prepends a row like
 
 2015-01-12 14:50:00,8,PROJECT-NAME,TASK-NAME
@@ -61,7 +73,7 @@ to _BUFFER"
     (goto-line 0)
     (insert "\n")
     (goto-line 0)
-    (insert (time-table--build-entry project-name task-name time-stamp))))
+    (insert (time-table--build-entry project-name task-name _time-stamp))))
 
 (defun time-table--stamp-to-sec (ts)
   (time-convert (date-to-time ts) 'integer))
@@ -257,11 +269,11 @@ It returns a list of lists, like (('project-name1' 2.3) ('project-name2' 0.2))"
 (cl-defun time-table--keep-last-7-days
     (time-table-list
      &optional
-     (time-stamp (time-table--now-time-stamp)))
+     (_time-stamp (time-table--now-time-stamp)))
   (let (
 	(last-day-to-keep
 	 (-
-	  (time-convert (date-to-time (time-table--keep-yyyymmdd time-stamp)) 'integer)
+	  (time-convert (date-to-time (time-table--keep-yyyymmdd _time-stamp)) 'integer)
 	  (* 3600 24 6))))
     (seq-keep
      (lambda(x)
@@ -270,3 +282,22 @@ It returns a list of lists, like (('project-name1' 2.3) ('project-name2' 0.2))"
 	   x
 	 nil))
      time-table-list)))
+
+(defun time-table--load-track-file ()
+  (unless (file-exists-p time-table-file)
+      (make-directory (file-name-directory time-table-file) t))
+  (let ((buffer (get-file-buffer time-table-file)))
+    (if buffer
+        buffer
+      (find-file-noselect time-table-file))))
+
+(defun time-table-track ()
+  (interactive)
+  (let ((project-name (completing-read "Select a project: " time-table-project-names))
+        (task-name (completing-read "Select a task: " time-table-task-names))
+	(track-buffer (time-table--load-track-file)))
+    (time-table--prepend-to-buffer project-name task-name track-buffer)
+    (message (format "Tracking %s/%s" project-name task-name))))
+
+
+
