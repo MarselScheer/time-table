@@ -69,7 +69,8 @@ and later assertions are made on the buffer content"
 (ert-deftest time-table--summarize-project-times ()
   "Sum project time by project"
   (let* (
-	 (buf (ms/fixture-time-table-empty-buffer)))
+	 (buf (ms/fixture-time-table-empty-buffer))
+	 (tt-list))
     (with-current-buffer buf
       (insert "2015-01-12 14:50:00,8,end,t1\n")
       (insert "2015-01-12 14:30:00,8,end,t1\n")
@@ -78,18 +79,21 @@ and later assertions are made on the buffer content"
       (insert "2015-01-12 12:00:00,8,p1,t1")
       )
     (set-buffer "*scratch*")
+    (setq tt-list (time-table--to-list buf))
     (should (string=
-	   (format "%s" (time-table--summarize-project-times buf))
+	   (format "%s" (time-table--summarize-project-times tt-list))
 	   (format "%s" (list (list "p1" 2.0) (list "p2" 0.5)))))))
 
 (ert-deftest time-table--summarize-project-time-uses-implicit-end-task ()
   "Sum project time using implicit end task"
   (let* (
-	 (buf (ms/fixture-time-table-empty-buffer)))
+	 (buf (ms/fixture-time-table-empty-buffer))
+	 (tt-list))
     (time-table--prepend-to-buffer "prj" "tsk" buf (ms/now 3600))
     (set-buffer "*scratch*")
+    (setq tt-list (time-table--to-list buf))
     (should (string=
-	   (format "%s" (time-table--summarize-project-times buf))
+	   (format "%s" (time-table--summarize-project-times tt-list))
 	   (format "%s" (list (list "prj" 1.0)))))))
 
 (ert-deftest time-table--calcs-over-hours-with-implicit-end-task ()

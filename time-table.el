@@ -242,17 +242,18 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
     (list item-str sum_h)))
 
 
-(cl-defun time-table--summarize-project-times (_buffer)
-  "Sums up the time spend per project contained in the time table contained in _BUFFER.
+(cl-defun time-table--summarize-project-times (time-table-list)
+  "Sums up the time spend per project contained in TIME-TABLE-LIST
 
-It returns a list of lists, like (('project-name1' 2.3) ('project-name2' 0.2))"
+It returns a list of lists, like (('project-name1' 2.3) ('project-name2' 0.2))
+
+See `time-table--to-list' for the structure of TIME-TABLE-LIST"
   (let* (
-	 (tt-list (time-table--to-list _buffer))
-	 (projects (time-table--project-list (time-table--remove-end-project tt-list))))
+	 (projects (time-table--project-list (time-table--remove-end-project time-table-list))))
     (let (rtn)
       (dolist (e projects rtn)
 	;; (time-table--debug-message "summary:" rtn)
-	(push (time-table--sum-times-for-project tt-list e) rtn))
+	(push (time-table--sum-times-for-project time-table-list e) rtn))
       ;; (time-table--debug-message "summary:" rtn)
       rtn)))
 
@@ -306,6 +307,15 @@ It returns a list of lists, like (('project-name1' 2.3) ('project-name2' 0.2))"
     (with-current-buffer track-buffer
       (save-buffer))
     (message (format "Tracking %s/%s. Over hours: %s" project-name task-name over-hours))))
+
+(defun time-table-summarize ()
+  (interactive)
+  (let* (
+	 (track-buffer (time-table--load-track-file))
+	 (time-table-list (time-table--keep-last-7-days (time-table--to-list track-buffer)))
+	 (summary (time-table--summarize-project-times time-table-list)))
+    (message (format "%s" summary))))
+    
 
 
 
