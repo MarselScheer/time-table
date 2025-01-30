@@ -189,6 +189,7 @@ the time worked for the latest task.
 	(message (format "%s" info))
 	(message (format "%s" obj)))
     nil))
+
 (defun time-table--project-list (time-table-list)
   "Extracts from TIME-TABLE-LIST the set of project-names and returns them
 as a list
@@ -258,6 +259,7 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
 
 
 (cl-defun time-table--over-hours (_buffer)
+  "Calculates the over hours based on _BUFFER. If _BUFFER is empty it returns 0"
   (let* (
 	 (tt-list (time-table--to-list _buffer))
 	 (actual-hours 0)
@@ -272,6 +274,12 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
     (time-table-list
      &optional
      (_time-stamp (time-table--now-time-stamp)))
+  "Keeps only those elements from TIME-TABLE-LIST where their time is not older than 7 days compared
+to 'today 00:00:00'.
+
+_TIME-STAMP is not meant to be used but ease testing.
+
+See `time-table--to-list' for the structure of TIME-TABLE-LIST"
   (let (
 	(last-day-to-keep
 	 (-
@@ -286,6 +294,8 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
      time-table-list)))
 
 (defun time-table--load-track-file ()
+  "If file specified by custom var TIME-TABLE-FILE does not exist it creates the necessary folders and the file.
+If a buffer to that file is open already it returns that buffer other it opens file in a buffer and returns that buffer."
   (unless (file-exists-p time-table-file)
       (make-directory (file-name-directory time-table-file) t))
   (let ((buffer (get-file-buffer time-table-file)))
@@ -294,11 +304,16 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
       (find-file-noselect time-table-file))))
 
 (defun time-table-over-hours ()
+  "Shows the over hours in the minibuffer"
   (interactive)
   (let ((track-buffer (time-table--load-track-file)))
     (message (format "Over hours: %s" (time-table--over-hours track-buffer)))))
 
 (defun time-table-track ()
+  "Adds a new entry to the buffer that holds the tracked times. Interactively asking for a project and task to track.
+
+Suggestion for the projects and tasks are defined in the custom vars TIME-TABLE-PROJECT-NAMES and TIME-TABLE-TASK-NAMES
+"
   (interactive)
   (let* ((project-name (completing-read "Select a project: " time-table-project-names))
         (task-name (completing-read "Select a task: " time-table-task-names))
@@ -310,6 +325,7 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
     (message (format "Tracking %s/%s. Over hours: %s" project-name task-name over-hours))))
 
 (defun time-table-summarize ()
+  "Show the hours in the last 7 days spend per project in the minibuffer"
   (interactive)
   (let* (
 	 (track-buffer (time-table--load-track-file))
@@ -326,6 +342,7 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
 
 
 (defun time-table-status ()
+  "Shows the over hours and the project/task currently tracking in the minibuffer"
   (interactive)
   (let ((track-buffer (time-table--load-track-file)))
     (message (format "Over hours: %s\n%s"  (time-table--over-hours track-buffer) (time-table--status track-buffer)))))
