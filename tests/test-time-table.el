@@ -66,6 +66,44 @@ and later assertions are made on the buffer content"
 	     (buffer-string)
 	     "fake-time2,4,prj2,tsk2\nfake-time,8,prj,tsk\n"))))
 
+(ert-deftest time-table--over-hours-of-an-empty-buffer-is-zero ()
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer)))
+    (set-buffer "*scratch*")
+    (time-table--debug-message "?: " (time-table--over-hours buf))
+    (should (=
+	     (time-table--over-hours buf)
+	     0))))
+
+(ert-deftest time-table--calcs-over-hours-with-implicit-end-task ()
+  "Calculates over hours using implicit end task"
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer)))
+    (time-table--prepend-to-buffer "prj" "tsk" buf (ms/now 3600))
+    (set-buffer "*scratch*")
+    (should (=
+	     (time-table--over-hours buf)
+	     -7.0))))
+
+(ert-deftest time-table--calcs-over-hours-if-expected-hours-change ()
+  "Sum project time by project"
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer)))
+    (with-current-buffer buf
+      (insert "2015-01-13 14:50:00,1,end,t1\n")
+      (insert "2015-01-13 14:30:00,1,end,t1\n")
+      (insert "2015-01-13 14:00:00,1,p2,t1\n")
+      (insert "2015-01-13 13:00:00,1,p1,t1\n")
+      (insert "2015-01-12 14:30:00,4,end,t1\n")
+      (insert "2015-01-12 14:00:00,4,p2,t1\n")
+      (insert "2015-01-12 13:00:00,4,p1,t1\n")
+      (insert "2015-01-12 12:00:00,4,p1,t1")
+      )
+    (set-buffer "*scratch*")
+    (should (=
+	     (time-table--over-hours buf)
+	     (+ (- 2.5 4) (- 1.5 1))))))
+
 (ert-deftest time-table--summarize-project-times ()
   "Sum project time by project"
   (let* (
@@ -96,34 +134,6 @@ and later assertions are made on the buffer content"
 	   (format "%s" (time-table--summarize-project-times tt-list))
 	   (format "%s" (list (list "prj" 1.0)))))))
 
-(ert-deftest time-table--calcs-over-hours-with-implicit-end-task ()
-  "Calculates over hours using implicit end task"
-  (let* (
-	 (buf (ms/fixture-time-table-empty-buffer)))
-    (time-table--prepend-to-buffer "prj" "tsk" buf (ms/now 3600))
-    (set-buffer "*scratch*")
-    (should (=
-	     (time-table--over-hours buf)
-	     -7.0))))
-
-(ert-deftest time-table--calcs-over-hours-if-expected-hours-change ()
-  "Sum project time by project"
-  (let* (
-	 (buf (ms/fixture-time-table-empty-buffer)))
-    (with-current-buffer buf
-      (insert "2015-01-13 14:50:00,1,end,t1\n")
-      (insert "2015-01-13 14:30:00,1,end,t1\n")
-      (insert "2015-01-13 14:00:00,1,p2,t1\n")
-      (insert "2015-01-13 13:00:00,1,p1,t1\n")
-      (insert "2015-01-12 14:30:00,4,end,t1\n")
-      (insert "2015-01-12 14:00:00,4,p2,t1\n")
-      (insert "2015-01-12 13:00:00,4,p1,t1\n")
-      (insert "2015-01-12 12:00:00,4,p1,t1")
-      )
-    (set-buffer "*scratch*")
-    (should (=
-	     (time-table--over-hours buf)
-	     (+ (- 2.5 4) (- 1.5 1))))))
 
 (ert-deftest time-table--filter-time-table-list-by-timestamp ()
   (let* (

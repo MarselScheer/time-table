@@ -141,6 +141,8 @@ It reads like follow:
 On project p1 we spend 3600 seconds on task2 and we started with task2 at 12.
 On that particular day we had to work 8h (28800 sec)
 
+The edge case that _BUFFER is empty nil is returned.
+
 Note the number of seconds we must work on a particular is only once per set
 and 0 for the other day. This allows then to calculate easily for each day how
 much time is left or we are already over time by simply summing up the 0-th
@@ -150,34 +152,35 @@ Also implicitly adds an end task as latest entry in order to also calculate
 the time worked for the latest task.
 "
   (with-current-buffer _buffer
-    (let (
-	  (rtn (list))
-	  (first-line-data nil)
-	  (next-line-data nil)
-	  (curr-line-data nil)
-	  (last-line-data nil)
-	  (current-line 0)
-	  (elements nil)
-	  (last-line (line-number-at-pos (point-max))))
-      (while (< current-line last-line)
-	(if (= current-line 0)
-	    (setq curr-line-data (split-string (time-table--build-entry "end" "end" (time-table--now-time-stamp)) ","))
-	  (progn
-	    (goto-line current-line)
-	    (setq curr-line-data (split-string (thing-at-point 'line) ","))))
-	(goto-line (+ current-line 1))
-	(setq next-line-data (split-string (thing-at-point 'line) ","))
-	(setq elements (split-string (thing-at-point 'line) ","))
-	(setq elements (mapcar 'string-trim elements))
-	(push (time-table--time-stamp-diff curr-line-data next-line-data) elements)
-	;; (push (time-table--hours-to-work curr-line-data next-line-data current-line last-line) elements)
+    (cond ((= (buffer-size _buffer) 0) nil)
+	  ((let (
+		 (rtn (list))
+		 (first-line-data nil)
+		 (next-line-data nil)
+		 (curr-line-data nil)
+		 (last-line-data nil)
+		 (current-line 0)
+		 (elements nil)
+		 (last-line (line-number-at-pos (point-max))))
+	     (while (< current-line last-line)
+	       (if (= current-line 0)
+		   (setq curr-line-data (split-string (time-table--build-entry "end" "end" (time-table--now-time-stamp)) ","))
+		 (progn
+		   (goto-line current-line)
+		   (setq curr-line-data (split-string (thing-at-point 'line) ","))))
+	       (goto-line (+ current-line 1))
+	       (setq next-line-data (split-string (thing-at-point 'line) ","))
+	       (setq elements (split-string (thing-at-point 'line) ","))
+	       (setq elements (mapcar 'string-trim elements))
+	       (push (time-table--time-stamp-diff curr-line-data next-line-data) elements)
+	       ;; (push (time-table--hours-to-work curr-line-data next-line-data current-line last-line) elements)
 
-	(if (= current-line 0)
-	    (push (* 3600 (string-to-number (nth 1 next-line-data))) elements)
-	  (push (time-table--hours-to-work2 curr-line-data next-line-data) elements))
-	(push elements rtn)
-	(setq current-line (+ 1 current-line)))
-      rtn)))
+	       (if (= current-line 0)
+		   (push (* 3600 (string-to-number (nth 1 next-line-data))) elements)
+		 (push (time-table--hours-to-work2 curr-line-data next-line-data) elements))
+	       (push elements rtn)
+	       (setq current-line (+ 1 current-line)))
+	     rtn)))))
 
 (setq DEBUG t)
 (defun time-table--debug-message (info obj)
@@ -210,13 +213,11 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
   "Keeps TIME-TABLE-LIST only entries where the project-name equals ITEM-STR.
 
 See `time-table--to-list' for the structure of TIME-TABLE-LIST"
-  ;; (time-table--debug-message "filter-in: " time-table-list)
   (let (rtn)
     (setq rtn (mapcar
 	     (lambda(x)
 	       (when (equal (nth time-table-project-col x) item-str) x))
 	     time-table-list))
-  ;; (time-table--debug-message "filter-out: " rtn)
     (delq nil rtn)))
 
 (defun time-table--sum-actual-work-time (a b)
@@ -252,10 +253,9 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
 	 (projects (time-table--project-list (time-table--remove-end-project time-table-list))))
     (let (rtn)
       (dolist (e projects rtn)
-	;; (time-table--debug-message "summary:" rtn)
 	(push (time-table--sum-times-for-project time-table-list e) rtn))
-      ;; (time-table--debug-message "summary:" rtn)
       rtn)))
+
 
 (cl-defun time-table--over-hours (_buffer)
   (let* (
@@ -263,9 +263,10 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
 	 (actual-hours 0)
 	 (expected-hours 0))
 
-    (setq actual-hours (seq-reduce 'time-table--sum-actual-work-time tt-list 0))
-    (setq expected-hours (seq-reduce 'time-table--sum-expected-work-time tt-list 0))
-    (time-table--2-digit-hour (- actual-hours expected-hours))))
+    (cond ((when (eq tt-list nil)) 0)
+	  ((setq actual-hours (seq-reduce 'time-table--sum-actual-work-time tt-list 0))
+	   (setq expected-hours (seq-reduce 'time-table--sum-expected-work-time tt-list 0))
+	   (time-table--2-digit-hour (- actual-hours expected-hours))))))
 
 (cl-defun time-table--keep-last-7-days
     (time-table-list
@@ -274,7 +275,7 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
   (let (
 	(last-day-to-keep
 	 (-
-	  (time-convert (date-to-time (time-table--keep-yyyymmdd _time-stamp)) 'integer)
+	  (time-convert (date-to-time (format "%s 00:00:00" (time-table--keep-yyyymmdd _time-stamp))) 'integer)
 	  (* 3600 24 6))))
     (seq-keep
      (lambda(x)
@@ -292,7 +293,7 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
         buffer
       (find-file-noselect time-table-file))))
 
-(defun time-table-overhours ()
+(defun time-table-over-hours ()
   (interactive)
   (let ((track-buffer (time-table--load-track-file)))
     (message (format "Over hours: %s" (time-table--over-hours track-buffer)))))
@@ -328,3 +329,4 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
   (interactive)
   (let ((track-buffer (time-table--load-track-file)))
     (message (format "Over hours: %s\n%s"  (time-table--over-hours track-buffer) (time-table--status track-buffer)))))
+
