@@ -216,3 +216,46 @@ and later assertions are made on the buffer content"
     (should (=
 	     (time-table--hours-worked-today buf)
 	     0.0))))
+
+(ert-deftest time-table--summarize-task-times-ignoring-end-projects ()
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer))
+	 (tt-list))
+    (with-current-buffer buf
+      (insert "2015-01-12 14:50:00,8,end,t1\n")
+      (insert "2015-01-12 14:30:00,8,end,t1\n")
+      (insert "2015-01-12 14:00:00,8,p2,t1\n")
+      (insert "2015-01-12 13:00:00,8,p1,t2\n")
+      (insert "2015-01-12 12:00:00,8,p1,t1")
+      )
+    (set-buffer "*scratch*")
+    (should (string=
+	   (format "%s" (time-table--summarize-task-times buf))
+	   (format "%s" (list (list "t1" 1.5) (list "t2" 1.0)))))))
+
+(ert-deftest time-table--summarize-task-times-use-implicit-end ()
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer))
+	 (tt-list))
+    (with-current-buffer buf
+      (insert "2015-01-12 14:50:00,8,end,t1\n")
+      (insert "2015-01-12 14:30:00,8,end,t1\n")
+      (insert "2015-01-12 14:00:00,8,p2,t1\n")
+      (insert "2015-01-12 13:00:00,8,p1,t2\n")
+      (insert "2015-01-12 12:00:00,8,p1,t1")
+      )
+    (time-table--prepend-to-buffer "oth" "tas" buf (ms/now 1800))
+    (set-buffer "*scratch*")
+    (should (string=
+	   (format "%s" (time-table--summarize-task-times buf))
+	   (format "%s" (list (list "t1" 1.5) (list "t2" 1.0) (list "tas" 0.5)))))))
+
+(ert-deftest time-table--summarize-task-times-is-nil-if-buffer-empty ()
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer))
+	 (tt-list))
+    (set-buffer "*scratch*")
+    (should (eq
+	     (time-table--summarize-task-times buf)
+	     nil))))
+

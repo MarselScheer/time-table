@@ -32,6 +32,9 @@
 (defvar time-table-project-col 4
   "Column number for the project-name in the time-table-structure")
 
+(defvar time-table-task-col 5
+  "Column number for the task-name in the time-table-structure")
+
 (defun time-table--now-time-stamp()
   "Just returns the current time as yyyy-mm-dd HH:MM:ss"
   (format-time-string "%Y-%m-%d %H:%M:%S" (current-time)))
@@ -325,7 +328,7 @@ Suggestion for the projects and tasks are defined in the custom vars TIME-TABLE-
       (save-buffer))
     (message (format "Tracking %s/%s. Over hours: %s" project-name task-name over-hours))))
 
-(defun time-table-summarize ()
+(defun time-table-summarize-projects-last-7-days ()
   "Show the hours in the last 7 days spend per project in the minibuffer"
   (interactive)
   (let* (
@@ -362,3 +365,55 @@ Suggestion for the projects and tasks are defined in the custom vars TIME-TABLE-
       (time-table--over-hours track-buffer)
       (time-table--status track-buffer)))))
 
+
+(cl-defun time-table--summarize-task-times (buffer)
+  "Sums up the time spend per task contained in BUFFER
+
+It returns a list of lists, like (('task-name1' 2.3) ('task-name2' 0.2))"
+  (let* (
+	 (time-table-list (time-table--to-list buffer))
+	 (tasks (time-table--task-list (time-table--remove-end-project time-table-list))))
+    (let (rtn)
+      (dolist (e tasks rtn)
+	(push (time-table--sum-times-for-tasks time-table-list e) rtn))
+      rtn)))
+
+(defun time-table--task-list (time-table-list)
+  "Extracts from TIME-TABLE-LIST the set of task-names and returns them
+as a list
+
+See `time-table--to-list' for the structure of TIME-TABLE-LIST"
+  (let (rtn)
+    (dolist (e time-table-list rtn)
+      (setq rtn (add-to-list 'rtn (nth time-table-task-col e))))))
+
+(defun time-table--sum-times-for-tasks (time-table-list item-str)
+  "Calculates  the sum of the hours actually worked on task with name ITEM-STR
+using TIME-TABLE-LIST as the basis for the calculations.
+
+Returns the list like ('task-name-x' 3.23)
+
+See `time-table--to-list' for the structure of TIME-TABLE-LIST"
+  (let ((sub) (sum_h))
+    (setq sub (time-table--filter-tasks time-table-list item-str))
+    (setq sum_h (time-table--2-digit-hour (seq-reduce 'time-table--sum-actual-work-time sub 0)))
+    (list item-str sum_h)))
+
+(defun time-table--filter-tasks (time-table-list item-str)
+  "Keeps TIME-TABLE-LIST only entries where the task-name equals ITEM-STR.
+
+See `time-table--to-list' for the structure of TIME-TABLE-LIST"
+  (let (rtn)
+    (setq rtn (mapcar
+	     (lambda(x)
+	       (when (equal (nth time-table-task-col x) item-str) x))
+	     time-table-list))
+    (delq nil rtn)))
+
+(defun time-table-summarize-tasks ()
+  "Show the hours in the last 7 days spend per project in the minibuffer"
+  (interactive)
+  (let* (
+	 (track-buffer (time-table--load-track-file))
+	 (summary (time-table--summarize-task-times track-buffer)))
+    (message (format "%s" summary))))
