@@ -270,11 +270,12 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
 	   (setq expected-hours (seq-reduce 'time-table--sum-expected-work-time tt-list 0))
 	   (time-table--2-digit-hour (- actual-hours expected-hours))))))
 
-(cl-defun time-table--keep-last-7-days
+(cl-defun time-table--keep-last-x-days
     (time-table-list
      &optional
+     (num-days 7)
      (_time-stamp (time-table--now-time-stamp)))
-  "Keeps only those elements from TIME-TABLE-LIST where their time is not older than 7 days compared
+  "Keeps only those elements from TIME-TABLE-LIST where their time is not older than NUM_DAYS (default 7) days compared
 to 'today 00:00:00'.
 
 _TIME-STAMP is not meant to be used but ease testing.
@@ -284,7 +285,7 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
 	(last-day-to-keep
 	 (-
 	  (time-convert (date-to-time (format "%s 00:00:00" (time-table--keep-yyyymmdd _time-stamp))) 'integer)
-	  (* 3600 24 6))))
+	  (* 3600 24 (- num-days 1)))))
     (seq-keep
      (lambda(x)
        (if
@@ -329,7 +330,7 @@ Suggestion for the projects and tasks are defined in the custom vars TIME-TABLE-
   (interactive)
   (let* (
 	 (track-buffer (time-table--load-track-file))
-	 (time-table-list (time-table--keep-last-7-days (time-table--to-list track-buffer)))
+	 (time-table-list (time-table--keep-last-x-days (time-table--to-list track-buffer)))
 	 (summary (time-table--summarize-project-times time-table-list)))
     (message (format "%s" summary))))
     
@@ -340,10 +341,24 @@ Suggestion for the projects and tasks are defined in the custom vars TIME-TABLE-
       (goto-line 1)
       (string-trim (thing-at-point 'line)))))
 
+(defun time-table--hours-worked-today (_buffer)
+  "Calculate the number of hours worked today"
+  (let* (
+	 (tt-list (time-table--to-list _buffer))
+	 (actual-hours 0))
+    (setq tt-list (time-table--keep-last-x-days tt-list 1))
+    (cond ((when (eq tt-list nil)) 0)
+	  ((setq actual-hours (seq-reduce 'time-table--sum-actual-work-time tt-list 0))
+	   (time-table--2-digit-hour actual-hours)))))
 
 (defun time-table-status ()
-  "Shows the over hours and the project/task currently tracking in the minibuffer"
+  "Shows the hours worked, over hours and the project/task currently tracking in the minibuffer"
   (interactive)
   (let ((track-buffer (time-table--load-track-file)))
-    (message (format "Over hours: %s\n%s"  (time-table--over-hours track-buffer) (time-table--status track-buffer)))))
+    (message
+     (format
+      "Total hours today : %s\nTotal over hours  : %s\nCurrently tracking: %s"
+      (time-table--hours-worked-today track-buffer)
+      (time-table--over-hours track-buffer)
+      (time-table--status track-buffer)))))
 

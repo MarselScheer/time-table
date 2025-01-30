@@ -152,7 +152,7 @@ and later assertions are made on the buffer content"
       )
     (set-buffer "*scratch*")
     (setq tt (time-table--to-list buf))
-    (setq filtered-tt (time-table--keep-last-7-days tt "2015-01-19 08:09:10"))
+    (setq filtered-tt (time-table--keep-last-x-days tt 7 "2015-01-19 08:09:10"))
     (should (length= filtered-tt 4))
     (should (string=
 	     (nth time-table-time-stamp-col (nth 3 filtered-tt))
@@ -173,3 +173,46 @@ and later assertions are made on the buffer content"
     (should (string=
 	     (time-table--status buf)
 	     "2015-01-15 14:50:00,1,end,t1"))))
+
+(ert-deftest time-table--hours-worked-today-use-implicit-end ()
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer)))
+    (with-current-buffer buf
+      (insert "2015-01-13 14:00:00,1,p2,t1\n")
+      (insert "2015-01-13 13:00:00,1,p1,t1\n")
+      (insert "2015-01-12 14:30:00,4,end,t1\n")
+      (insert "2015-01-12 14:00:00,4,p2,t1\n")
+      (insert "2015-01-12 13:00:00,4,p1,t1\n")
+      (insert "2015-01-12 12:00:00,4,p1,t1")
+      )
+    (time-table--prepend-to-buffer "oth" "tas" buf (ms/now 1800))
+    (time-table--prepend-to-buffer "end" "end" buf (ms/now 3600))
+    (time-table--prepend-to-buffer "prj" "tsk" buf (ms/now 5400))
+    (set-buffer "*scratch*")
+    (should (=
+	     (time-table--hours-worked-today buf)
+	     1.0))))
+
+(ert-deftest time-table--hours-worked-today-is-zero-if-no-entry-for-today ()
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer)))
+    (with-current-buffer buf
+      (insert "2015-01-13 14:00:00,1,p2,t1\n")
+      (insert "2015-01-13 13:00:00,1,p1,t1\n")
+      (insert "2015-01-12 14:30:00,4,end,t1\n")
+      (insert "2015-01-12 14:00:00,4,p2,t1\n")
+      (insert "2015-01-12 13:00:00,4,p1,t1\n")
+      (insert "2015-01-12 12:00:00,4,p1,t1")
+      )
+    (set-buffer "*scratch*")
+    (should (=
+	     (time-table--hours-worked-today buf)
+	     0.0))))
+
+(ert-deftest time-table--hours-worked-today-zero-if-buffer-is-emtpy ()
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer)))
+    (set-buffer "*scratch*")
+    (should (=
+	     (time-table--hours-worked-today buf)
+	     0.0))))
