@@ -4,11 +4,11 @@
   :init-value nil
   :lighter " tt")
 
-(defcustom time-table-project-names '("Project 1" "Project 2" "Project 3", "end")
+(defcustom time-table-project-names '("Project 1" "Project 2" "Project 3" "end")
   "List of available project names"
   :type 'list)
 
-(defcustom time-table-task-names '("Task 1" "Task 2" "Task 3", "end")
+(defcustom time-table-task-names '("Task 1" "Task 2" "Task 3" "end")
   "List of available task names"
   :type 'list)
 
@@ -322,11 +322,12 @@ Suggestion for the projects and tasks are defined in the custom vars TIME-TABLE-
   (let* ((project-name (completing-read "Select a project: " time-table-project-names))
         (task-name (completing-read "Select a task: " time-table-task-names))
 	(track-buffer (time-table--load-track-file))
+	(today-hours (time-table--hours-worked-today track-buffer))
 	(over-hours (time-table--over-hours track-buffer)))
     (time-table--prepend-to-buffer project-name task-name track-buffer)
     (with-current-buffer track-buffer
       (save-buffer))
-    (message (format "Tracking %s/%s. Over hours: %s" project-name task-name over-hours))))
+    (message (format "Tracking %s/%s. Hours worked today: %s Over hours: %s" project-name task-name today-hours over-hours))))
 
 (defun time-table-summarize-projects-last-7-days ()
   "Show the hours in the last 7 days spend per project in the minibuffer"
