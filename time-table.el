@@ -417,3 +417,11 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
 	 (track-buffer (time-table--load-track-file))
 	 (summary (time-table--summarize-task-times track-buffer)))
     (message (format "%s" summary))))
+
+(defun time-table-find-tracking-file ()
+  "Opens the file that contains the tracked entries"
+  (interactive)
+  (let* (
+	 (track-buffer (time-table--load-track-file))
+	 )
+    (switch-to-buffer-other-window track-buffer)))
