@@ -1,3 +1,20 @@
 * time-table
 
 emacs minor mode to track times for projects and task
+
+* Install
+** straight
+
+#+begin_src
+(use-package time-table
+  :straight (time-table :type git :host github :repo "MarselScheer/time-table" :branch "time-table-buffer")
+  :custom
+  (time-table-work-hours 0)
+  (time-table-file "~/docker_fs/repos/orgfiles/tracked-times")
+  (time-table-project-names '("p1" "p2" "end"))
+  (time-table-task-names '("t1" "end")))
+(define-key evil-motion-state-map (kbd "SPC t t") 'time-table-track)
+(define-key evil-motion-state-map (kbd "SPC t s") 'time-table-status)
+(define-key evil-motion-state-map (kbd "SPC t S") 'time-table-summarize-projects-last-7-days)
+(define-key evil-motion-state-map (kbd "SPC t b") 'time-table-find-tracking-file)
+#+end_src
