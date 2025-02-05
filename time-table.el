@@ -63,8 +63,8 @@
 (cl-defun time-table--prepend-to-buffer
     (project-name
      task-name
-     &optional
      _buffer
+     &optional
      (_time-stamp (time-table--now-time-stamp)))
   "Prepends a row like
 
@@ -320,14 +320,14 @@ Suggestion for the projects and tasks are defined in the custom vars TIME-TABLE-
 "
   (interactive)
   (let* ((project-name (completing-read "Select a project: " time-table-project-names))
-        (task-name (completing-read "Select a task: " time-table-task-names))
-	(track-buffer (time-table--load-track-file))
-	(today-hours (time-table--hours-worked-today track-buffer))
-	(over-hours (time-table--over-hours track-buffer)))
+	 (task-name (completing-read "Select a task: " time-table-task-names))
+	 (track-buffer (time-table--load-track-file))
+	 (today-hours (time-table--hours-worked-today track-buffer))
+	 (over-hours (time-table--over-hours track-buffer)))
     (time-table--prepend-to-buffer project-name task-name track-buffer)
     (with-current-buffer track-buffer
-      (save-buffer))
-    (message (format "Tracking %s/%s. Hours worked today: %s Over hours: %s" project-name task-name today-hours over-hours))))
+      (save-buffer)))
+  (time-table-status))
 
 (defun time-table-summarize-projects-last-7-days ()
   "Show the hours in the last 7 days spend per project in the minibuffer"
@@ -425,7 +425,8 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
   (let* (
 	 (track-buffer (time-table--load-track-file))
 	 )
-    (switch-to-buffer-other-window track-buffer)))
+    (switch-to-buffer-other-window track-buffer))
+  (goto-line 0))
 
 (defun time-table-end-tracking ()
   "Adds an 'end' project/task to the time tracking table"
