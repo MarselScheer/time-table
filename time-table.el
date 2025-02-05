@@ -426,3 +426,12 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
 	 (track-buffer (time-table--load-track-file))
 	 )
     (switch-to-buffer-other-window track-buffer)))
+
+(defun time-table-end-tracking ()
+  "Adds an 'end' project/task to the time tracking table"
+  (interactive)
+  (let* (
+	 (track-buffer (time-table--load-track-file))
+	 )
+    (time-table--prepend-to-buffer "end" "end" track-buffer))
+  (time-table-status))
