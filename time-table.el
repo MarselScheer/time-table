@@ -438,3 +438,13 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
     (with-current-buffer track-buffer
       (save-buffer)))
   (time-table-status))
+
+(defun time-table-summarize-projects-last-x-days (number-of-days)
+  "Show the hours in the last x days spend per project in the minibuffer"
+  (interactive "nNumber of days to consider: ")
+  (let* (
+	 (track-buffer (time-table--load-track-file))
+	 (time-table-list (time-table--keep-last-x-days (time-table--to-list track-buffer) number-of-days))
+	 (summary (time-table--summarize-project-times time-table-list)))
+    (message (format "%s" summary))))
+
