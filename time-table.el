@@ -8,6 +8,10 @@
   "List of available project names"
   :type 'list)
 
+(defcustom time-table-project-map '(("Project 1" . "group1") ("Project 2" . "group1"))
+  "Maps some projects to new names/ids"
+  :type 'list)
+
 (defcustom time-table-task-names '("Task 1" "Task 2" "Task 3" "end")
   "List of available task names"
   :type 'list)
@@ -260,6 +264,24 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
 	(push (time-table--sum-times-for-project time-table-list e) rtn))
       rtn)))
 
+(cl-defun time-table--summarize-project-map-times (time-table-list)
+  "Sums up the time spend per project contained in TIME-TABLE-LIST
+after remapping according to TIME-TABLE-PROJECT-MAP
+
+It returns a list of lists, like (('project-map1' 2.3) ('project-map2' 0.2))
+
+See `time-table--to-list' for the structure of TIME-TABLE-LIST"
+  (dolist (e time-table-list nil)
+    (let ((mapped-project
+	   (alist-get
+	    (nth time-table-project-col e)
+	    time-table-project-map
+	    (nth time-table-project-col e)
+	    nil
+	    'string-equal)))
+      (setcar (nthcdr time-table-project-col e) mapped-project)))
+  (time-table--summarize-project-times time-table-list))
+
 
 (cl-defun time-table--over-hours (_buffer)
   "Calculates the over hours based on _BUFFER. If _BUFFER is empty it returns 0"
@@ -336,6 +358,16 @@ Suggestion for the projects and tasks are defined in the custom vars TIME-TABLE-
 	 (track-buffer (time-table--load-track-file))
 	 (time-table-list (time-table--keep-last-x-days (time-table--to-list track-buffer)))
 	 (summary (time-table--summarize-project-times time-table-list)))
+    (message (format "%s" summary))))
+
+(defun time-table-summarize-project-maps-last-7-days ()
+  "Show the hours in the last 7 days spend per project after remapped according to
+TIME-TABLE-PROJECT-MAP in the minibuffer"
+  (interactive)
+  (let* (
+	 (track-buffer (time-table--load-track-file))
+	 (time-table-list (time-table--keep-last-x-days (time-table--to-list track-buffer)))
+	 (summary (time-table--summarize-project-map-times time-table-list)))
     (message (format "%s" summary))))
     
 (defun time-table--status (buffer)

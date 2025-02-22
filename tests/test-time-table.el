@@ -122,6 +122,26 @@ and later assertions are made on the buffer content"
 	   (format "%s" (time-table--summarize-project-times tt-list))
 	   (format "%s" (list (list "p1" 2.0) (list "p2" 0.5)))))))
 
+(ert-deftest time-table--summarize-project-times-using-ids ()
+  "Sum project time by project"
+  (let* (
+	 (buf (ms/fixture-time-table-empty-buffer))
+	 (time-table-project-map '(("p1" . "1") ("p2" . "1")))
+	 (tt-list))
+    (with-current-buffer buf
+      (insert "2015-01-12 14:50:00,8,end,t1\n")
+      (insert "2015-01-12 14:30:00,8,end,t1\n")
+      (insert "2015-01-12 14:00:00,8,p2,t1\n")
+      (insert "2015-01-12 13:00:00,8,p1,t1\n")
+      (insert "2015-01-12 12:00:00,8,p1,t1\n")
+      (insert "2015-01-12 10:00:00,8,p3,t1")
+      )
+    (set-buffer "*scratch*")
+    (setq tt-list (time-table--to-list buf))
+    (should (string=
+	   (format "%s" (time-table--summarize-project-map-times tt-list))
+	   (format "%s" (list (list "p3" 2.0) (list "1" 2.5)))))))
+
 (ert-deftest time-table--summarize-project-time-uses-implicit-end-task ()
   "Sum project time using implicit end task"
   (let* (
