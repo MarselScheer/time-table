@@ -480,3 +480,6 @@ See `time-table--to-list' for the structure of TIME-TABLE-LIST"
 	 (summary (time-table--summarize-project-times time-table-list)))
     (message (format "%s" summary))))
 
+
+(provide 'time-table)
+;;; time-table.el ends here
